@@ -1,0 +1,29 @@
+{
+  "files": {
+    "main.css": "/static/css/main.8b84ff14.css",
+    "main.js": "/static/js/main.810b3a8f.js",
+    "static/media/carrot.png": "/static/media/carrot.f8e757d03fc449b45c85.png",
+    "static/media/robo.png": "/static/media/robo.672b9c7486ce6c434f52.png",
+    "static/media/brinjal.png": "/static/media/brinjal.d418c838dc5e2f7c9584.png",
+    "static/media/green-chilli.png": "/static/media/green-chilli.b2befb2ca04c270d6212.png",
+    "static/media/potato.png": "/static/media/potato.1be188091d031f409107.png",
+    "static/media/pumpkin.png": "/static/media/pumpkin.6094dc6ca1154ca6f914.png",
+    "static/media/tomato.png": "/static/media/tomato.fefe29ad2dd73bad8b94.png",
+    "static/media/beans.png": "/static/media/beans.84166c6ac5cb9fb587a9.png",
+    "static/media/lime.png": "/static/media/lime.d37da1bf36be1e148ef3.png",
+    "static/media/snake-gourd.png": "/static/media/snake-gourd.6eca6c83429218afd53d.png",
+    "static/media/cabbage.png": "/static/media/cabbage.454ec02feae94286480a.png",
+    "static/media/AGROFARMA (12).png": "/static/media/AGROFARMA (12).13d8c6dad80de669394d.png",
+    "static/media/1.png": "/static/media/1.867e4ef7c828a0d28410.png",
+    "static/media/2.png": "/static/media/2.56148fa3445487f3b3eb.png",
+    "static/media/3.png": "/static/media/3.18ef442798eb2e2237e1.png",
+    "static/media/4.png": "/static/media/4.3af8055abf99275dc73d.png",
+    "index.html": "/index.html",
+    "main.8b84ff14.css.map": "/static/css/main.8b84ff14.css.map",
+    "main.810b3a8f.js.map": "/static/js/main.810b3a8f.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.8b84ff14.css",
+    "static/js/main.810b3a8f.js"
+  ]
+}

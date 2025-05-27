@@ -222,6 +222,18 @@ const CropRecommendation = ({ onShowResults }) => {
         }
         return "";
 
+      case "previousCrop":
+        if (!value) {
+          return "Previous crop is required";
+        }
+        return "";
+
+      case "desiredCrop":
+        if (!value) {
+          return "Desired crop is required";
+        }
+        return "";
+
       case "plantingMonth":
         if (!formData.useCurrentMonth) {
           if (!value) {
@@ -262,7 +274,12 @@ const CropRecommendation = ({ onShowResults }) => {
   };
 
   const isFormValid = () => {
-    const requiredFields = ["targetMonth", "year"];
+    const requiredFields = [
+      "targetMonth",
+      "previousCrop",
+      "desiredCrop",
+      "year",
+    ];
     if (!formData.useCurrentMonth) {
       requiredFields.push("plantingMonth");
     }
@@ -287,7 +304,12 @@ const CropRecommendation = ({ onShowResults }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    const requiredFields = ["targetMonth", "year"];
+    const requiredFields = [
+      "targetMonth",
+      "previousCrop",
+      "desiredCrop",
+      "year",
+    ];
     if (!formData.useCurrentMonth) {
       requiredFields.push("plantingMonth");
     }
@@ -313,7 +335,15 @@ const CropRecommendation = ({ onShowResults }) => {
     }));
 
     // Real-time validation for the changed field
-    if (name === "targetMonth" || name === "plantingMonth" || name === "year") {
+    if (
+      [
+        "targetMonth",
+        "previousCrop",
+        "desiredCrop",
+        "plantingMonth",
+        "year",
+      ].includes(name)
+    ) {
       const error = validateField(name, newValue);
       setErrors((prev) => ({
         ...prev,
@@ -374,8 +404,8 @@ const CropRecommendation = ({ onShowResults }) => {
         },
         body: JSON.stringify({
           targetMonth: Number.parseInt(formData.targetMonth),
-          previousCrop: formData.previousCrop || null,
-          desiredCrop: formData.desiredCrop || null,
+          previousCrop: formData.previousCrop,
+          desiredCrop: formData.desiredCrop,
           plantingMonth: Number.parseInt(formData.plantingMonth),
           year: Number.parseInt(formData.year),
         }),
@@ -534,14 +564,18 @@ const CropRecommendation = ({ onShowResults }) => {
               {/* Previous Crop */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Previous Crop (Optional)
+                  Previous Crop
                 </label>
                 <select
                   name="previousCrop"
                   value={formData.previousCrop}
                   onChange={handleInputChange}
+                  onBlur={handleFieldBlur}
                   disabled={cropsLoading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 ${
+                    errors.previousCrop ? "border-red-500" : "border-gray-300"
+                  }`}
+                  required
                 >
                   <option value="">
                     {cropsLoading ? "Loading crops..." : "Select previous crop"}
@@ -553,19 +587,29 @@ const CropRecommendation = ({ onShowResults }) => {
                       </option>
                     ))}
                 </select>
+                {errors.previousCrop && (
+                  <div className="flex items-center mt-1 text-red-600 text-sm">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.previousCrop}
+                  </div>
+                )}
               </div>
 
               {/* Desired Crop */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Desired Crop (Optional)
+                  Desired Crop
                 </label>
                 <select
                   name="desiredCrop"
                   value={formData.desiredCrop}
                   onChange={handleInputChange}
+                  onBlur={handleFieldBlur}
                   disabled={cropsLoading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 ${
+                    errors.desiredCrop ? "border-red-500" : "border-gray-300"
+                  }`}
+                  required
                 >
                   <option value="">
                     {cropsLoading ? "Loading crops..." : "Select desired crop"}
@@ -577,6 +621,12 @@ const CropRecommendation = ({ onShowResults }) => {
                       </option>
                     ))}
                 </select>
+                {errors.desiredCrop && (
+                  <div className="flex items-center mt-1 text-red-600 text-sm">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.desiredCrop}
+                  </div>
+                )}
               </div>
 
               {/* Planting Month */}

@@ -1,0 +1,2 @@
+REACT_APP_CROP_RECOMMENDATION_API=https://agrofarma-flask.onrender.com
+NODE_API_URL=http://localhost:8000

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import logo from "../../assets/AGROFARMA (12).png";
 import { useNavigate } from "react-router-dom";
 
+const baseUrl = process.env.NODE_API_URL || "http://localhost:8000";
+
 const SignUp = () => {
   const navigate = useNavigate();
 
@@ -23,7 +25,7 @@ const SignUp = () => {
     // const NODE_URL = process.env.NODE_API_URL
 
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/register`, {
+      const response = await fetch(`${baseUrl}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

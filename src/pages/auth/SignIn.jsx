@@ -3,6 +3,8 @@ import logo from "../../assets/AGROFARMA (12).png";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
+const baseUrl = process.env.NODE_API_URL || "http://localhost:8000";
+
 const SignIn = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ const SignIn = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/login`, {
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

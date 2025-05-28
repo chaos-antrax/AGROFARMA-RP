@@ -504,7 +504,7 @@ const CropRecommendation = ({ onShowResults }) => {
   }, [formData.year]);
 
   return (
-    <div className="h-screen bg-gray-50 p-4 lg:p-8 overflow-hidden">
+    <div className="h-screen p-4 lg:p-8 overflow-hidden">
       <div className="max-w-7xl mx-auto h-full flex flex-col">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">

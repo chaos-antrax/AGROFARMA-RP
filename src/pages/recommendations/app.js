@@ -44,25 +44,25 @@ const App = () => {
   };
 
   return (
-    <div className="App">
+    <div className="App overflow-y-hidden">
       {/* Navigation buttons for testing - remove these in your actual implementation */}
-      <div className="fixed top-4 right-4 z-50 flex space-x-2">
+      <div className="fixed top-4 right-4 z-50 flex space-x-2 w-48">
         <button
           onClick={() => setCurrentView("recommendation")}
-          className={`px-3 py-1 rounded text-sm ${
+          className={`px-3 py-1 rounded text-sm w-full ${
             currentView === "recommendation"
               ? "bg-green-600 text-white"
-              : "bg-white text-gray-600"
+              : "bg-green-100 text-gray-600"
           }`}
         >
           Form
         </button>
         <button
           onClick={() => setCurrentView("sessions")}
-          className={`px-3 py-1 rounded text-sm ${
+          className={`px-3 py-1 rounded text-sm w-full ${
             currentView === "sessions"
               ? "bg-green-600 text-white"
-              : "bg-white text-gray-600"
+              : "bg-green-100 text-gray-600"
           }`}
         >
           Sessions

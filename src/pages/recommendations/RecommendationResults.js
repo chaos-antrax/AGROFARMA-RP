@@ -49,11 +49,11 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
         sessionId: Date.now().toString(),
       };
 
-      // Placeholder API call - replace with your actual endpoint
-      const response = await fetch(`${baseUrl}/api/sessions`, {
+      const response = await fetch(`${baseUrl}/api/sessions/recommendations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(sessionData),
       });
@@ -168,7 +168,7 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
   const worstCrops = getWorstCrops();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
+    <div className="min-h-screen p-4 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -190,7 +190,7 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 hidden md:flex">
             <button
               onClick={generateInsights}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -207,6 +207,24 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
               {isSaving ? "Saving..." : "Save Session"}
             </button>
           </div>
+        </div>
+
+        <div className="flex md:hidden items-center space-x-3 mb-4">
+          <button
+            onClick={generateInsights}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Brain className="w-4 h-4 mr-2" />
+            Get More Insights
+          </button>
+          <button
+            onClick={handleSaveSession}
+            disabled={isSaving}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? "Saving..." : "Save Session"}
+          </button>
         </div>
 
         {/* Summary Cards */}
@@ -431,8 +449,9 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
         )}
 
         {/* Recommendations Grid */}
-        <div className="grid gap-6">
-          {results.recommendations.map((recommendation, index) => (
+        <span className="text-2xl pl-4 font-semibold">Top Picks :</span>
+        <div className="grid md:grid-cols-3 gap-6 mt-4">
+          {results.recommendations.slice(0, 3).map((recommendation, index) => (
             <div
               key={recommendation.crop}
               className="bg-white rounded-xl shadow-lg overflow-hidden"
@@ -551,7 +570,7 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
               </div>
 
               {/* Progress Bar */}
-              <div className="bg-gray-50 px-6 py-3">
+              {/* <div className="bg-gray-50 px-6 py-3">
                 <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
                   <span>Overall Recommendation Score</span>
                   <span>{recommendation.finalScore}%</span>
@@ -570,7 +589,7 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
                     }}
                   ></div>
                 </div>
-              </div>
+              </div> */}
             </div>
           ))}
         </div>

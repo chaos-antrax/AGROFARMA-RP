@@ -1,4 +1,3 @@
-// src/pages/HistoryPage.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"; // Import query, orderBy, limit
 import { db } from "../firebase";
@@ -27,6 +26,7 @@ const HistoryPage = ({ handleViewHistory }) => {
   const pdfRef = useRef(); // Ref for the modal content to be captured as PDF
   const navigate = useNavigate(); // Initialize navigate
 
+  // get the data from firebase storage when visit the page
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -34,17 +34,16 @@ const HistoryPage = ({ handleViewHistory }) => {
         const historyRef = collection(db, "soilAnalysisHistory");
         const q = query(historyRef, orderBy("createdAt", "desc"), limit(50));
         const querySnapshot = await getDocs(q);
-        const fetchedRecords = querySnapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            createdAt: doc.data().createdAt
-              ? moment(doc.data().createdAt.toDate()).format(
-                  "MMM D, YYYY h:mm A"
-                )
-              : "N/A",
-          }))
-          .filter((record) => record.predictedClass === "Suitable"); // 🔍 filter only Suitable
+        const fetchedRecords = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          // Ensure 'date' field is also formatted if it's a Firestore Timestamp
+          // For example, if 'date' is also a timestamp:
+          // date: doc.data().date ? moment(doc.data().date.toDate()).format("MMM D, YYYY") : "N/A",
+          createdAt: doc.data().createdAt
+            ? moment(doc.data().createdAt.toDate()).format("MMM D, YYYY h:mm A")
+            : "N/A",
+        }));
 
         setRecords(fetchedRecords);
       } catch (err) {
@@ -70,73 +69,87 @@ const HistoryPage = ({ handleViewHistory }) => {
 
     // Use a temporary element for PDF generation with significantly improved styling
     const printContent = document.createElement("div");
-    printContent.style.padding = "30px";
-    printContent.style.fontFamily = "Inter, Arial, sans-serif"; // Use Inter or a clean sans-serif font
-    printContent.style.fontSize = "12px";
-    printContent.style.color = "#333";
+    // Define a fixed width for rendering, helps with consistent layout for html2canvas
+    printContent.style.width = "800px";
+    printContent.style.margin = "0 auto"; // Center it if it were visible
+    printContent.style.padding = "40px"; // Increased padding
+    printContent.style.fontFamily =
+      "Arial, 'Helvetica Neue', Helvetica, sans-serif";
+    printContent.style.fontSize = "12px"; // Base font size
+    printContent.style.color = "#333333"; // Dark gray for text
     printContent.style.lineHeight = "1.6";
-    printContent.style.backgroundColor = "#ffffff"; // Ensure white background for PDF
-    printContent.style.boxSizing = "border-box"; // Ensure padding is included in element's total width/height
+    printContent.style.backgroundColor = "#ffffff";
+    printContent.style.boxSizing = "border-box";
+
+    // Determine predicted class color
+    const predictedClassColor =
+      selectedRecord.predictedClass === "Suitable" ? "#4CAF50" : "#EF5350"; // Green for Suitable, Red for Unsuitable
+    const predictedClassText =
+      selectedRecord.predictedClass === "Suitable"
+        ? "Suitable for Growth"
+        : "Not Ideal for Growth";
 
     printContent.innerHTML = `
-      <div style="text-align: center; margin-bottom: 40px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0;">
-        <h1 style="color: #166534; font-size: 32px; font-weight: bold; margin: 0;">Soil Analysis Report</h1>
-        <p style="color: #4CAF50; font-size: 18px; margin-top: 5px;">Detailed Analysis for ${
+      <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+        <h1 style="color: #1B5E20; font-size: 28px; font-weight: bold; margin: 0 0 5px 0;">Growth Suitability Report</h1>
+        <p style="color: #4CAF50; font-size: 16px; margin: 0;">Detailed Analysis for ${
           selectedRecord.cropType
         }</p>
       </div>
 
-      <div style="margin-bottom: 30px;">
-        <h3 style="color: #2E7D32; font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #c8e6c9; padding-bottom: 5px;">
-          <span style="display: inline-block; width: 25px; height: 25px; background-color: #4CAF50; border-radius: 50%; text-align: center; line-height: 25px; color: white; font-size: 16px; margin-right: 10px;">&#10003;</span>
+      <div style="margin-bottom: 25px; background-color: #F1F8E9; padding: 20px; border-radius: 8px; border-left: 5px solid #66BB6A;">
+        <h3 style="color: #2E7D32; font-size: 20px; font-weight: bold; margin:0 0 15px 0; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 28px; height: 28px; background-color: #66BB6A; border-radius: 50%; text-align: center; line-height: 28px; color: white; font-size: 16px; margin-right: 12px; font-weight:normal;"></span>
           Growth Suitability Overview
         </h3>
-        <div style="display: flex; justify-content: space-between; align-items: center; background-color: #e8f5e9; padding: 15px 20px; border-radius: 8px; border: 1px solid #c8e6c9;">
-          <p style="font-size: 16px; font-weight: bold; color: #333;">Predicted Class:</p>
-          <span style="background-color: #4CAF50; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 18px;">
-            ${selectedRecord.predictedClass}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 10px; background-color: #ffffff; border-radius: 6px; border: 1px solid #DCE775;">
+          <p style="font-size: 15px; font-weight: 600; color: #333; margin:0;">Predict Result:</p>
+          <span style="background-color: ${predictedClassColor}; color: white; padding: 8px 15px; border-radius: 18px; font-weight: bold; font-size: 15px;">
+            ${predictedClassText}
           </span>
         </div>
-        <p style="font-size: 14px; color: #555; margin-top: 10px; text-align: right;">
-          Confidence: <span style="font-weight: bold;">${(
+        <p style="font-size: 13px; color: #555555; text-align: right; margin: 5px 5px 0 0;">
+          Confidence Score: <span style="font-weight: bold; color: #1B5E20;">${(
             selectedRecord.confidence * 100
           ).toFixed(2)}%</span>
         </p>
       </div>
 
-      <div style="margin-bottom: 30px;">
-        <h3 style="color: #2E7D32; font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #c8e6c9; padding-bottom: 5px;">
-          <span style="display: inline-block; width: 25px; height: 25px; background-color: #81C784; border-radius: 50%; text-align: center; line-height: 25px; color: white; font-size: 16px; margin-right: 10px;">&#x2692;</span>
-          Soil & Climate Data
+      <div style="margin-bottom: 25px; background-color: #E3F2FD; padding: 20px; border-radius: 8px; border-left: 5px solid #42A5F5;">
+        <h3 style="color: #1565C0; font-size: 20px; font-weight: bold; margin:0 0 15px 0; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 28px; height: 28px; background-color: #42A5F5; border-radius: 50%; text-align: center; line-height: 28px; color: white; font-size: 16px; margin-right: 12px; font-weight:normal;"></span>
+          Soil & Weather Data
         </h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 15px 30px;">
-          <div style="flex: 1 1 45%; min-width: 200px;">
-            <p style="margin-bottom: 5px;"><strong style="color: #555;">Analysis Date:</strong> ${
-              selectedRecord.date
-            }</p>
-            <p style="margin-bottom: 5px;"><strong style="color: #555;">Soil Type:</strong> ${
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; font-size: 13px;">
+          ${/* Column 1 */ ""}
+          <div>
+            <p style="margin: 0 0 6px 0;"><strong style="color: #424242; font-weight: 600; min-width: 110px; display: inline-block;">Analysis Date:</strong> <span style="color: #0D47A1;">${
+              selectedRecord.date || selectedRecord.createdAt
+            }</span></p>
+            <p style="margin: 0 0 6px 0;"><strong style="color: #424242; font-weight: 600; min-width: 110px; display: inline-block;">Soil Type:</strong> <span style="color: #0D47A1;">${
               selectedRecord.soilType
-            }</p>
-            <p style="margin-bottom: 5px;"><strong style="color: #555;">PH Value:</strong> ${
+            }</span></p>
+            <p style="margin: 0 0 6px 0;"><strong style="color: #424242; font-weight: 600; min-width: 110px; display: inline-block;">PH Value:</strong> <span style="color: #0D47A1;">${
               selectedRecord.phValue
-            }</p>
-            <p style="margin-bottom: 5px;"><strong style="color: #555;">Potassium (ppm):</strong> ${
+            }</span></p>
+            <p style="margin: 0 0 6px 0;"><strong style="color: #424242; font-weight: 600; min-width: 110px; display: inline-block;">Potassium:</strong> <span style="color: #0D47A1;">${
               selectedRecord.potassium
-            }</p>
-            <p style="margin-bottom: 5px;"><strong style="color: #555;">Phosphorus (ppm):</strong> ${
-              selectedRecord.phosphorus
-            }</p>
+            } ppm</span></p>
           </div>
-          <div style="flex: 1 1 45%; min-width: 200px;">
-            <p style="margin-bottom: 5px;"><strong style="color: #555;">Average Temp (°C):</strong> ${
+          ${/* Column 2 */ ""}
+          <div>
+            <p style="margin: 0 0 6px 0;"><strong style="color: #424242; font-weight: 600; min-width: 120px; display: inline-block;">Phosphorus:</strong> <span style="color: #0D47A1;">${
+              selectedRecord.phosphorus
+            } ppm</span></p>
+            <p style="margin: 0 0 6px 0;"><strong style="color: #424242; font-weight: 600; min-width: 120px; display: inline-block;">Average Temp:</strong> <span style="color: #0D47A1;">${
               selectedRecord.tempMean
-            }</p>
-            <p style="margin-bottom: 5px;"><strong style="color: #555;">Daylight (hours):</strong> ${
+            } °C</span></p>
+            <p style="margin: 0 0 6px 0;"><strong style="color: #424242; font-weight: 600; min-width: 120px; display: inline-block;">Daylight:</strong> <span style="color: #0D47A1;">${
               selectedRecord.daylightDuration
-            }</p>
-            <p style="margin-bottom: 5px;"><strong style="color: #555;">Rainfall (mm):</strong> ${
+            } hours</span></p>
+            <p style="margin: 0 0 6px 0;"><strong style="color: #424242; font-weight: 600; min-width: 120px; display: inline-block;">Rainfall:</strong> <span style="color: #0D47A1;">${
               selectedRecord.rainSum
-            }</p>
+            } mm</span></p>
           </div>
         </div>
       </div>
@@ -144,114 +157,151 @@ const HistoryPage = ({ handleViewHistory }) => {
       ${
         selectedRecord.urea && selectedRecord.tsp && selectedRecord.mop
           ? `
-        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 8px; border: 1px solid #c8e6c9; margin-bottom: 30px;">
-          <h3 style="color: #2E7D32; font-size: 20px; font-weight: bold; margin-bottom: 15px;">
-            <span style="display: inline-block; width: 25px; height: 25px; background-color: #66BB6A; border-radius: 50%; text-align: center; line-height: 25px; color: white; font-size: 16px; margin-right: 10px;">&#x1F331;</span>
+        <div style="background-color: #E8F5E9; padding: 20px; border-radius: 8px; border-left: 5px solid #388E3C; margin-bottom: 30px;">
+          <h3 style="color: #1B5E20; font-size: 20px; font-weight: bold; margin:0 0 15px 0; display: flex; align-items: center;">
+            <span style="display: inline-block; width: 28px; height: 28px; background-color: #388E3C; border-radius: 50%; text-align: center; line-height: 28px; color: white; font-size: 16px; margin-right: 12px; font-weight:normal;"></span>
             Fertilizer Recommendation (kg/ha)
           </h3>
-          <ul style="list-style-type: none; padding: 0; margin: 0;">
-            <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">
-                <span style="position: absolute; left: 0; color: #4CAF50; font-size: 18px;">&bull;</span>
-                <strong style="color: #333;">Urea:</strong> <span style="color: #2E7D32; font-weight: bold;">${selectedRecord.urea}</span>
+          <ul style="list-style-type: none; padding: 0; margin: 0; font-size: 14px;">
+            <li style="margin-bottom: 8px; padding: 8px 0; border-bottom: 1px dashed #C8E6C9;">
+                <strong style="color: #333333; font-weight: 600; min-width: 80px; display: inline-block;">Urea:</strong> 
+                <span style="color: #2E7D32; font-weight: bold;">${selectedRecord.urea}</span>
             </li>
-            <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">
-                <span style="position: absolute; left: 0; color: #4CAF50; font-size: 18px;">&bull;</span>
-                <strong style="color: #333;">TSP:</strong> <span style="color: #2E7D32; font-weight: bold;">${selectedRecord.tsp}</span>
+            <li style="margin-bottom: 8px; padding: 8px 0; border-bottom: 1px dashed #C8E6C9;">
+                <strong style="color: #333333; font-weight: 600; min-width: 80px; display: inline-block;">TSP:</strong> 
+                <span style="color: #2E7D32; font-weight: bold;">${selectedRecord.tsp}</span>
             </li>
-            <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">
-                <span style="position: absolute; left: 0; color: #4CAF50; font-size: 18px;">&bull;</span>
-                <strong style="color: #333;">MOP:</strong> <span style="color: #2E7D32; font-weight: bold;">${selectedRecord.mop}</span>
+            <li style="padding: 8px 0;">
+                <strong style="color: #333333; font-weight: 600; min-width: 80px; display: inline-block;">MOP:</strong> 
+                <span style="color: #2E7D32; font-weight: bold;">${selectedRecord.mop}</span>
             </li>
           </ul>
-          <p style="font-size: 10px; color: #666; margin-top: 20px; font-style: italic; text-align: right;">
-            *Recommendations are general and may vary based on specific farm conditions.
+          <p style="font-size: 11px; color: #616161; margin-top: 15px; font-style: italic; text-align: right;">
+            *These are general recommendations. Adjust based on local conditions and soil tests.
           </p>
         </div>
       `
           : `
-        <div style="background-color: #fffde7; padding: 20px; border-radius: 8px; border: 1px solid #ffe082; margin-bottom: 30px;">
-          <p style="font-size: 14px; color: #ff8f00; font-weight: bold; text-align: center;">
+        <div style="background-color: #FFF9C4; padding: 20px; border-radius: 8px; border-left: 5px solid #FBC02D; margin-bottom: 30px; text-align: center;">
+          <p style="font-size: 14px; color: #F57F17; font-weight: 600; margin:0;">
             No specific fertilizer recommendation available for this crop type in the recorded data.
           </p>
         </div>
       `
       }
 
-      <div style="text-align: center; font-size: 10px; color: #999; margin-top: 40px; padding-top: 15px; border-top: 1px solid #f0f0f0;">
-        Generated by Plant Growth Suitability Analyzer on ${moment().format(
-          "MMMM D, YYYY"
+      <div style="text-align: center; font-size: 10px; color: #757575; margin-top: 30px; padding-top: 15px; border-top: 1px solid #eeeeee;">
+        Report generated by Plant Growth Suitability Analyzer on ${moment().format(
+          "MMMM D, YYYY, h:mm A"
         )}
+        <br/>
+        Document ID: ${selectedRecord.id}
       </div>
     `;
 
     document.body.appendChild(printContent);
 
-    const canvas = await html2canvas(printContent, {
-      scale: 3, // Increased scale for even higher resolution
-      useCORS: true,
-      logging: false,
-      backgroundColor: "#ffffff", // Explicitly ensure white background
-    });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgProps = pdf.getImageProperties(imgData);
+    try {
+      const canvas = await html2canvas(printContent, {
+        scale: 2.5, // Adjusted scale for balance between quality and performance
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        scrollX: 0, // Prevent horizontal scroll issues
+        scrollY: -window.scrollY, // Account for page scroll
+        windowWidth: printContent.scrollWidth, // Use scrollWidth for full content
+        windowHeight: printContent.scrollHeight, // Use scrollHeight for full content
+      });
 
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const margin = 10; // 10mm margin on all sides
+      const imgData = canvas.toDataURL("image/png", 1.0); // Quality 1.0
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    let currentHeight = 0;
-    const imgRatio = imgProps.width / imgProps.height;
-    let imgDisplayWidth = pageWidth - 2 * margin;
-    let imgDisplayHeight = imgDisplayWidth / imgRatio; // Correctly calculated image height for display
+      const imgProps = pdf.getImageProperties(imgData);
+      const margin = 15; // 15mm margin
 
-    // Corrected the variable name here from `imgHeight` to `imgDisplayHeight`
-    while (currentHeight < imgDisplayHeight) {
-      if (currentHeight > 0) {
-        pdf.addPage();
+      // Calculate dimensions to fit image within PDF page margins
+      const usableWidth = pdfWidth - 2 * margin;
+      const usableHeight = pdfHeight - 2 * margin;
+
+      const imgRatio = imgProps.width / imgProps.height;
+      let finalImgWidth = imgProps.width;
+      let finalImgHeight = imgProps.height;
+
+      if (finalImgWidth > usableWidth) {
+        finalImgWidth = usableWidth;
+        finalImgHeight = finalImgWidth / imgRatio;
       }
-      // Calculate the Y position for the current slice of the image
-      const sliceHeight = Math.min(
-        imgDisplayHeight - currentHeight,
-        pageHeight - 2 * margin
-      );
-      const startY = currentHeight * (imgProps.height / imgDisplayHeight); // Y-coordinate in original image
-      const endY =
-        (currentHeight + sliceHeight) * (imgProps.height / imgDisplayHeight); // Y-coordinate in original image
 
-      const canvasSlice = document.createElement("canvas");
-      canvasSlice.width = imgProps.width;
-      canvasSlice.height = endY - startY;
-      const ctx = canvasSlice.getContext("2d");
-      ctx.drawImage(
-        canvas,
-        0,
-        startY,
-        imgProps.width,
-        endY - startY,
-        0,
-        0,
-        canvasSlice.width,
-        canvasSlice.height
-      );
+      // If after scaling to width, height is still too large for one page, it will be split.
+      // For a single image that needs to be scaled to fit one page (if small enough) or split if too tall:
+      const effectiveImgWidthInPdf = usableWidth;
+      const effectiveImgHeightInPdf = effectiveImgWidthInPdf / imgRatio;
 
-      const sliceImgData = canvasSlice.toDataURL("image/png");
-      pdf.addImage(
-        sliceImgData,
-        "PNG",
-        margin,
-        margin,
-        imgDisplayWidth,
-        sliceHeight
-      );
+      let currentPosition = 0;
+      const totalImageHeightInPdf = effectiveImgHeightInPdf;
 
-      currentHeight += sliceHeight;
+      while (currentPosition < totalImageHeightInPdf) {
+        if (currentPosition > 0) {
+          pdf.addPage();
+        }
+
+        // Calculate the height of the slice for the current PDF page
+        const heightForThisPage = Math.min(
+          totalImageHeightInPdf - currentPosition,
+          usableHeight
+        );
+
+        // Calculate source image (canvas) coordinates for this slice
+        // sy: y-coordinate in original canvas pixels
+        // sHeight: height of slice in original canvas pixels
+        const sy = (currentPosition / totalImageHeightInPdf) * imgProps.height;
+        const sHeight =
+          (heightForThisPage / totalImageHeightInPdf) * imgProps.height;
+
+        // Create a temporary canvas for the slice
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = imgProps.width;
+        sliceCanvas.height = sHeight;
+        const sliceCtx = sliceCanvas.getContext("2d");
+
+        // Draw the slice from the main canvas to the temporary slice canvas
+        sliceCtx.drawImage(
+          canvas,
+          0,
+          sy,
+          imgProps.width,
+          sHeight,
+          0,
+          0,
+          imgProps.width,
+          sHeight
+        );
+
+        const sliceImgData = sliceCanvas.toDataURL("image/png", 1.0);
+
+        pdf.addImage(
+          sliceImgData,
+          "PNG",
+          margin,
+          margin,
+          effectiveImgWidthInPdf,
+          heightForThisPage
+        );
+        currentPosition += heightForThisPage;
+      }
+
+      pdf.save(
+        `Soil_Analysis_${selectedRecord.cropType}_${selectedRecord.id}.pdf`
+      );
+    } catch (e) {
+      console.error("Error generating PDF:", e);
+      // Optionally, inform the user that PDF generation failed
+      alert("Could not generate PDF. Please try again.");
+    } finally {
+      document.body.removeChild(printContent); // Clean up the temporary element
     }
-
-    pdf.save(
-      `Soil_Analysis_${selectedRecord.cropType}_${selectedRecord.date}.pdf`
-    );
-    document.body.removeChild(printContent); // Clean up the temporary element
   };
 
   if (loading) {
@@ -295,7 +345,7 @@ const HistoryPage = ({ handleViewHistory }) => {
 
         <h1 className="text-4xl font-extrabold text-green-800 mb-4 text-center flex items-center justify-center gap-3">
           <FaHistory className="text-green-600 text-4xl" /> Plant Growth
-          Analysis History
+          Suitability History
         </h1>
         <p className="text-center text-gray-600 mb-10 text-lg">
           A record of your past soil analysis results and fertilizer
@@ -320,7 +370,7 @@ const HistoryPage = ({ handleViewHistory }) => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
             {records.map((record) => (
               <div
                 key={record.id}
@@ -345,7 +395,8 @@ const HistoryPage = ({ handleViewHistory }) => {
                   </div>
                   <p className="text-sm text-gray-500 mb-3">
                     Analyzed on:{" "}
-                    <span className="font-medium">{record.createdAt}</span>
+                    <span className="font-medium">{record.createdAt}</span>{" "}
+                    {/* Using createdAt for display consistency */}
                   </p>
                   <div className="text-sm text-gray-700 space-y-1">
                     <p>
@@ -386,16 +437,18 @@ const HistoryPage = ({ handleViewHistory }) => {
         className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4"
       >
         <div
-          className="bg-white rounded-xl p-8 w-full max-w-2xl shadow-2xl relative"
+          className="bg-white rounded-xl p-8 w-full max-w-2xl shadow-2xl relative overflow-y-auto max-h-[90vh]"
           ref={pdfRef}
         >
+          {" "}
+          {/* Added overflow and max-height for modal */}
           {selectedRecord && (
             <>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl"
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl z-10" // Ensure button is above content
               >
-                &times;
+                ×
               </button>
               <h3 className="text-3xl font-bold mb-6 text-green-700 text-center">
                 Detailed Analysis Report
@@ -434,12 +487,13 @@ const HistoryPage = ({ handleViewHistory }) => {
                 </div>
                 <div>
                   <p className="text-lg font-semibold text-green-600 mb-2">
-                    Soil & Climate Data
+                    Soil & Weather Data
                   </p>
                   <p className="text-md">
                     <strong className="font-medium">Analysis Date:</strong>{" "}
-                    {selectedRecord.date}
-                  </p>
+                    {selectedRecord.date || selectedRecord.createdAt}
+                  </p>{" "}
+                  {/* Fallback to createdAt */}
                   <p className="text-md">
                     <strong className="font-medium">Soil Type:</strong>{" "}
                     {selectedRecord.soilType}

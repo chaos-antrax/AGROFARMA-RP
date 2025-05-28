@@ -13,12 +13,20 @@ import {
   XCircle,
   TrendingDown,
   AlertTriangle,
+  Brain,
+  X,
+  Loader,
 } from "lucide-react";
 
 const baseUrl = process.env.NODE_API_URL || "http://localhost:8000";
+const ollamaUrl = process.env.OLLAMA_API_URL || "http://localhost:3001";
 
 const RecommendationResults = ({ results, onBack, onSaveSession }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [showInsightsModal, setShowInsightsModal] = useState(false);
+  const [insights, setInsights] = useState("");
+  const [loadingInsights, setLoadingInsights] = useState(false);
+  const [insightsError, setInsightsError] = useState("");
 
   const getScoreColor = (score) => {
     if (score >= 70) return "text-green-600 bg-green-100";
@@ -42,11 +50,10 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
       };
 
       // Placeholder API call - replace with your actual endpoint
-      const response = await fetch(`${baseUrl}/api/sessions/recommendations`, {
+      const response = await fetch(`${baseUrl}/api/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(sessionData),
       });
@@ -121,6 +128,42 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
     return validCrops.slice(-2).reverse(); // Get last 2 and reverse to show worst first
   };
 
+  const generateInsights = async () => {
+    setLoadingInsights(true);
+    setInsightsError("");
+    setShowInsightsModal(true);
+
+    try {
+      const response = await fetch(`${ollamaUrl}/api/insights`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          results: results,
+          topRecommendations: results.recommendations.slice(0, 5),
+          desiredCropAnalysis: getDesiredCropAnalysis(),
+          worstCrops: getWorstCrops(),
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setInsights(data.insights);
+      } else {
+        const errorData = await response.json();
+        setInsightsError(errorData.error || "Failed to generate insights");
+      }
+    } catch (error) {
+      console.error("Error generating insights:", error);
+      setInsightsError(
+        "Failed to connect to insights service. Please try again."
+      );
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
+
   const desiredCropAnalysis = getDesiredCropAnalysis();
   const worstCrops = getWorstCrops();
 
@@ -147,14 +190,23 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
               </p>
             </div>
           </div>
-          <button
-            onClick={handleSaveSession}
-            disabled={isSaving}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? "Saving..." : "Save Session"}
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={generateInsights}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Brain className="w-4 h-4 mr-2" />
+              Get More Insights
+            </button>
+            <button
+              onClick={handleSaveSession}
+              disabled={isSaving}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? "Saving..." : "Save Session"}
+            </button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -523,6 +575,74 @@ const RecommendationResults = ({ results, onBack, onSaveSession }) => {
           ))}
         </div>
       </div>
+      {/* Insights Modal */}
+      {showInsightsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center">
+                <Brain className="w-6 h-6 text-blue-600 mr-2" />
+                <h2 className="text-xl font-semibold text-gray-900">
+                  AI-Powered Crop Insights
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowInsightsModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {loadingInsights ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader className="w-8 h-8 animate-spin text-blue-600 mb-4" />
+                  <p className="text-gray-600">
+                    Analyzing your crop recommendations...
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    This may take a few moments
+                  </p>
+                </div>
+              ) : insightsError ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Unable to Generate Insights
+                  </h3>
+                  <p className="text-gray-600 text-center mb-4">
+                    {insightsError}
+                  </p>
+                  <button
+                    onClick={generateInsights}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : insights ? (
+                <div className="prose max-w-none">
+                  <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                    {insights}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {insights && (
+              <div className="flex justify-end p-6 border-t border-gray-200">
+                <button
+                  onClick={() => setShowInsightsModal(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

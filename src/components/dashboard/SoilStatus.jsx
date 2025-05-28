@@ -12,6 +12,7 @@ import moment from "moment";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
+
 import HistoryPage from "./HistoryPage";
 
 const baseUrl =
@@ -45,6 +46,7 @@ const SoilStatus = () => {
     Capsicum: { urea: 100, tsp: 215, mop: 65 },
   };
 
+  // fetch the weather data and set the values to form
   const fetchWeatherData = async (date) => {
     setLoadingWeather(true);
     setErrors((prevErrors) => ({ ...prevErrors, weather: undefined }));
@@ -89,16 +91,16 @@ const SoilStatus = () => {
     if (diffDays > 7) newErrors.date = "Date must be within 7 days from today.";
     if (!cropType) newErrors.cropType = "Crop type is required.";
     if (!soilType) newErrors.soilType = "Soil type is required.";
-    if (!phValue || parseFloat(phValue) < 3.5 || parseFloat(phValue) > 10.0)
-      newErrors.phValue = "PH must be between 3.5 and 10.0.";
+    if (!phValue || parseFloat(phValue) < 2.0 || parseFloat(phValue) > 10.0)
+      newErrors.phValue = "PH must be between 2 and 10.0.";
     if (!potassium || parseFloat(potassium) < 0 || parseFloat(potassium) > 1000)
       newErrors.potassium = "Potassium must be between 0 and 1000.";
     if (
       !phosphorus ||
       parseFloat(phosphorus) < 0 ||
-      parseFloat(phosphorus) > 300
+      parseFloat(phosphorus) > 600
     )
-      newErrors.phosphorus = "Phosphorus must be between 0 and 300.";
+      newErrors.phosphorus = "Phosphorus must be between 0 and 600.";
     if (tempMean === "" || isNaN(parseFloat(tempMean)))
       newErrors.tempMean =
         "Average temperature is required and must be a number.";
@@ -133,9 +135,11 @@ const SoilStatus = () => {
     };
 
     try {
+      //send the data to model for get the predictions
       const res = await axios.post(`${baseUrl}/predict`, body);
       setResult(res.data);
 
+      // save the data to firebase if no error
       if (!res.data.error) {
         const recommendation = fertilizerRecommendations[cropType] || {};
         const historyRef = collection(db, "soilAnalysisHistory");
@@ -207,7 +211,6 @@ const SoilStatus = () => {
           ) : (
             ""
           )}
-
           <h2 className="text-4xl font-extrabold text-gray-800 mb-4 text-center flex items-center justify-center gap-3">
             <span className="text-green-600">🌱</span> Plant Growth Suitability
             Analysis
@@ -318,7 +321,6 @@ const SoilStatus = () => {
                   <input
                     id="phValue"
                     type="number"
-                    step="0.1"
                     className="block w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-green-500 focus:border-green-500 transition duration-150 ease-in-out"
                     value={phValue}
                     onChange={(e) => setPhValue(e.target.value)}
